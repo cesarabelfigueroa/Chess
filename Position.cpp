@@ -22,5 +22,5 @@ int Position::getY(){
 }
 
 void Position::setY(int y){
-   this -> x = y;
+   this -> y = y;
 }

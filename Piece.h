@@ -1,17 +1,21 @@
-#include <iostream>
+#ifndef PIECE_H
+#define PIECE_H
 
-using std::string;
+#include "Position.h"
+#include "Enum.h"
 
-class piece{
-private:
-	int x;
-	int y;
-	String type;
-	char identity;
-	Color color;
-
-public:
-	piece();
-	~piece();
-	move();
+class Piece{
+   private:
+      ENUM_TYPE type;
+      ENUM_COLOR color;
+   public:
+      Piece(ENUM_COLOR);
+      ENUM_TYPE getType();
+      ENUM_COLOR getColor();
+      virtual char toString();
+      virtual bool isValidMove(Position*, Position*);
+   protected:
+      void setType(ENUM_TYPE);
 };
+
+#endif
