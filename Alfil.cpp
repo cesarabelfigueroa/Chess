@@ -11,5 +11,16 @@ char Alfil::toString(){
 }
 
 bool Alfil::isValidMove(Position* origen, Position* destino){
+	int initX = origen -> getX();
+	int initY = origen -> getY();
+	int endX = destino -> getX();
+	int endY = destino -> getY();
+	if(initX + initY == endX + endY){
+		return true;
+	}else if(initX - initY == endX - endY){
+		return true;
+	}else{
+		return false;
+	}
 
 }

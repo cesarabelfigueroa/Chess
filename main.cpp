@@ -54,17 +54,17 @@ int main(int argc, char *argv[]){
 		printw("\t1. Mover. \n");
 		printw("\t2. Guardar Partida. \n");
 		printw("\t2. Salir. \n\n");
-		printw("\t¿Qué desea hacer? : ");
+		printw("\tAcción: ");
 		noecho();
 		if(getch() == 49){
 			clear();
 			showBoard(board);
 			if(turno % 2){
-				printw("\tOpciones: Turno de las negras. \n\n");
+				printw("\tTurno de las negras. \n\n");
 			}else{
-				printw("\tOpciones: Turno de las blancas. \n\n");
+				printw("\tTurno de las blancas. \n\n");
 			}
-			printw("\t¿Cuál es tu movimiento? : ");
+			printw("\tMovimiento: ");
 			char valor = getch();
 			while(!(((int) valor >= 65 && (int) valor <= 72) ||((valor >= 97)&& (valor <= 104)))){
 				valor = getch();
@@ -310,7 +310,128 @@ bool isSomethingInMiddle(Piece*** board, Position* init, Position* end){
 		}
 	}else if(board[initX][initY] -> getType() == PEON){
 		return board[endX][endY] -> getType() != VACIA;
-	}else{
+	}else if(board[initX][initY] -> getType() == CABALLO){
+		return false;
+	}else if(board[initX][initY] -> getType() == ALFIL){
+		if(initX + initY == endX + endY){
+			if(endX < initX && endY > initY){
+				int referencesY = endY - 1;
+				for (int i = endX + 1 ; i < initX; ++i){
+					if(board[i][referencesY] -> getType() != VACIA){
+						addch(i + 48);
+						addch(referencesY + 48);
+						return true;
+					}
+					referencesY--;
+				}
+				return false;
+			}else if(endX > initX && endY < initY){
+				int referencesY = endY + 1;
+				for (int i = endX -1 ; i > initX ; --i){
+					if(board[i][referencesY] -> getType() != VACIA){
+						return true;
+					}
+					referencesY++;
+				}
+				return false;
+			}
+		}else if(initX - initY == endX - endY){
+			if(endX < initX && endY < initY){
+				int referencesY = endY + 1;
+				for (int i = endX + 1; i < initX; ++i){
+					if(board[i][referencesY] -> getType() != VACIA){
+						return true;
+					}
+					referencesY++;
+				}
+				return false;
+			}else if(endX > initX && endY > initY){
+				int referencesY = endY - 1;
+				for (int i = endX - 1  ; i > initX ; --i){
+					if(board[i][referencesY] -> getType() != VACIA){
+						return true;
+					}
+					referencesY--;
+				}
+				return false;
+			}
+		}
+	}else if(board[initX][initY] -> getType() == REY){
+		return false;
+	}else if(board[initX][initY] -> getType() == DAMA){
+		if(initX + initY == endX + endY){
+			if(endX < initX && endY > initY){
+				int referencesY = endY - 1;
+				for (int i = endX + 1 ; i < initX; ++i){
+					if(board[i][referencesY] -> getType() != VACIA){
+						addch(i + 48);
+						addch(referencesY + 48);
+						return true;
+					}
+					referencesY--;
+				}
+				return false;
+			}else if(endX > initX && endY < initY){
+				int referencesY = endY + 1;
+				for (int i = endX -1 ; i > initX ; --i){
+					if(board[i][referencesY] -> getType() != VACIA){
+						return true;
+					}
+					referencesY++;
+				}
+				return false;
+			}
+		}else if(initX - initY == endX - endY){
+			if(endX < initX && endY < initY){
+				int referencesY = endY + 1;
+				for (int i = endX + 1; i < initX; ++i){
+					if(board[i][referencesY] -> getType() != VACIA){
+						return true;
+					}
+					referencesY++;
+				}
+				return false;
+			}else if(endX > initX && endY > initY){
+				int referencesY = endY - 1;
+				for (int i = endX - 1  ; i > initX ; --i){
+					if(board[i][referencesY] -> getType() != VACIA){
+						return true;
+					}
+					referencesY--;
+				}
+				return false;
+			}
+		}if(endY > initY){ // se mueve a la derecha.
+			for (int i = endY - 1; i > initY; --i){
+				if(board[initX][i] -> getType() != VACIA){
+					return true;
+				}
+			}
+			return false;
+		}else if(initY > endY){ // se mueve a la izquierda.
+			for (int i = endY + 1; i < initY; ++i){
+				if(board[initX][i] -> getType() != VACIA){
+					return true;
+				}
+			}
+			return false;
+		}else if(endX > initX){ // se mueve a abajo.
+			for (int i = endX - 1; i > initX; --i){
+				if(board[i][initY] -> getType() != VACIA){
+					return true;
+				}
+			}
+			return false;
+		}else if(initX > endX){ // se mueve a la arriba.
+			for (int i = endX + 1 ; i < initX; ++i){
+				if(board[i][initY] -> getType() != VACIA){
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	else{
 		return false;
 	}
 }

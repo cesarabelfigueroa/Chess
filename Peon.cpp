@@ -18,24 +18,20 @@ bool Peon::isValidMove(Position* origen, Position* destino){
 	int endY = destino -> getY();
 	if(initY == endY){
 		if(color == BLANCO){
-			if(initX == 6 && initX <= endX + 2 ){
+			if(initX == 6 && initX <= endX + 2  && endY == initY){
 				return true;
-			}else{
-				if(initX != 6 && initX <= endX + 1){
+			}else if(initX != 6 && initX <= endX + 1 && endY == initY){
 					return true;
-				}else{
-					return false;
-				}
+			}else{
+				return false;
 			}
 		}else if(color == NEGRO){
-			if(initX == 1 && endX <= initX + 2){
+			if(initX == 1 && endX <= initX + 2 && endY == initY){
+				return true;
+			}else if(initX != 1 && endX <= initX+1 && endY == initY){
 				return true;
 			}else{
-				if(initX != 1 && endX < initX+1){
-					return true;
-				}else{
-					return false;
-				}
+				return false;
 			}
 		}
 	}else{
