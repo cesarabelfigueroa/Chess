@@ -73,7 +73,8 @@ int main(int argc, char *argv[]){
  	Position* king;
  	ENUM_COLOR color;
  	ENUM_COLOR enemyColor;
- 	char* move = new char[4];
+ 	int x, y;
+ 	char* moves = new char[4];
  	int turn = 0;
  	bool hasMove = false;
  	bool playing = true;
@@ -82,15 +83,25 @@ int main(int argc, char *argv[]){
 	init_pair(1, COLOR_BLACK, 0);
 	init_pair(2, COLOR_WHITE, 0);
 	init_pair(3, COLOR_BLACK, 0);
+	clear();
+
 	Piece*** board = createBoard();
+	getmaxyx(stdscr,y,x);
+	move(y/2,(x/2)-20);	
+	attron(COLOR_PAIR(2));
+	printw("Bienvenido a tu juego de ajedrez.");
 	if(uploadGame(board)){
+		move(1+y/2,(x/2)-20);
 		printw("Su partida se cargo con éxito.");
 	}else{
+		move(1+y/2,(x/2)-20);
 		printw("Su partida no se cargo con éxito, volvamos a jugar.");
 		fillBoard(board);
 	}
-
+	attroff(COLOR_PAIR(2));
+	getch();
 	while(playing){
+		clear();
 		showBoard(board);
 		if(turn%2 == 0){
 			color = BLANCO;
@@ -107,13 +118,13 @@ int main(int argc, char *argv[]){
 		if(choose == 49){
 			clear();
 			showBoard(board);
-			getEntry(turn, move);
-			initial = createPosition(move[1], move[0]);
-			end = createPosition(move[3], move[2]);
+			getEntry(turn, moves);
+			initial = createPosition(moves[1], moves[0]);
+			end = createPosition(moves[3], moves[2]);
 			king = placeToKing(board, color);
 			Position* checkr = isCheck(board, king);
 			bool nexMoveDanger = nexMoveHasCheck(board, initial, end, color); 
-			if(isValiEntry(move) && isSameColor(board, initial, color)){
+			if(isValiEntry(moves) && isSameColor(board, initial, color)){
 				if(!nexMoveDanger && !checkr){
 					if(Mover(board, initial , end)){
 						turn++;
@@ -131,13 +142,13 @@ int main(int argc, char *argv[]){
 							delete checkr;
 							clear();
 							showBoard(board);
-							getEntry(turn, move);
-							initial = createPosition(move[1], move[0]);
-							end = createPosition(move[3], move[2]);
+							getEntry(turn, moves);
+							initial = createPosition(moves[1], moves[0]);
+							end = createPosition(moves[3], moves[2]);
 							king = placeToKing(board, color);
 							checkr = isCheck(board, king);
 							nexMoveDanger = nexMoveHasCheck(board, initial, end, color); 
-							if(!nexMoveHasCheck){
+							if(!nexMoveHasCheck && isValiEntry(moves) && isSameColor(board, initial, color)){
 								Mover(board, initial, end);
 							}
 						}
@@ -170,6 +181,10 @@ int main(int argc, char *argv[]){
 		clear();
 	}	
 	destroyBoard(board);
+	delete moves;
+	delete initial;
+	delete king;
+	delete end;
 	endwin();			
 	return 0;
 }
