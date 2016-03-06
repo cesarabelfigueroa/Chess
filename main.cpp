@@ -81,9 +81,8 @@ int main(int argc, char *argv[]){
 	start_color();
 	init_pair(1, COLOR_BLACK, 0);
 	init_pair(2, COLOR_WHITE, 0);
+	init_pair(3, COLOR_BLACK, 0);
 	Piece*** board = createBoard();
-	getch();
-	
 	if(uploadGame(board)){
 		printw("Su partida se cargo con éxito.");
 	}else{
@@ -130,12 +129,17 @@ int main(int argc, char *argv[]){
 							delete end;
 							delete king;
 							delete checkr;
+							clear();
+							showBoard(board);
 							getEntry(turn, move);
-							Position* initial = createPosition(move[1], move[0]);
-							Position* end = createPosition(move[3], move[2]);
-							Position* king = placeToKing(board, color);
-							Position* checkr = isCheck(board, king);
-							bool nexMoveDanger = nexMoveHasCheck(board, initial, end, color); 
+							initial = createPosition(move[1], move[0]);
+							end = createPosition(move[3], move[2]);
+							king = placeToKing(board, color);
+							checkr = isCheck(board, king);
+							nexMoveDanger = nexMoveHasCheck(board, initial, end, color); 
+							if(!nexMoveHasCheck){
+								Mover(board, initial, end);
+							}
 						}
 						turn++;
 						getch();
@@ -218,21 +222,21 @@ void showBoard(Piece*** board){
 		addch(i + 48);
 		printw("\t");
 		for (int j = 0; j < 8; ++j){
+			attron(COLOR_PAIR(board[i][j] -> getColor() + 1) | A_BOLD );
 			if(board[i][j]){
 				printw("[");
-				attron(COLOR_PAIR(board[i][j] -> getColor() + 1) | A_BOLD );
 				if(board[i][j] -> getType() != VACIA){
 					addch(board[i][j] -> toString());
 				}else{
 					addch(' ');
 				}
-				attroff(COLOR_PAIR(board[i][j] -> getColor() + 1));
 				printw("]");
 			}else{
 				printw("[");
 				addch(' ');
 				printw("]");
 			}
+			attroff(COLOR_PAIR(board[i][j] -> getColor() + 1));
 			printw("\t");
 		}
 		printw("\n\n\n");
@@ -354,7 +358,11 @@ bool Mover(Piece*** board, Position* init, Position* end){
 	int endX = end -> getX();
 	int endY = end -> getY();
 	if(isValidMove(board, init, end) && !isKing(board, end)){
-		board[endX][endY] = board[initX][initY];
+		if(board[initX][initY] -> getType() == PEON && endX == 0 || endX == 7){
+			board[endX][endY] = new Dama(board[initX][initY] -> getColor());
+		}else{
+			board[endX][endY] = board[initX][initY];
+		}
 		board[initX][initY] = new Piece((board[initX][initY]) -> getColor());
 		return true;
 	}
@@ -547,7 +555,7 @@ Position* isCheck(Piece*** board, Position* king){
 }
 
 bool enemyChequer(Piece*** board, Position* checkr){
-	if(checkr && board[checkr -> getX()][checkr -> getY()] -> getType() != REY){
+	if(checkr){
 		for (int i = 0; i < 8; ++i){
 			for (int j = 0; j < 8; ++j){
 				Position* init = new Position(i, j);
@@ -843,12 +851,11 @@ bool uploadGame(Piece*** board){
 				color = NEGRO;
 			}else if(!strcmp(buffer, (char*)"B")){
 				color = BLANCO;
+			}else{
+				color = NULO;
 			}
 			fe.getline(buffer, 2, ',');
-			printw(buffer);
-			getch();
 			if(!strcmp(buffer,  (char*) "T")){
-				printw("Hola");
 				piece = new Torre(color);
 			}else if(!strcmp(buffer,  (char*) "C")){
 				piece = new Caballo(color);
@@ -860,15 +867,17 @@ bool uploadGame(Piece*** board){
 				piece = new Dama(color);
 			}else if(!strcmp(buffer,  (char*) "R")){
 				piece = new Rey(color);
-			}else{
+			}else if(!strcmp(buffer,  (char*) "V")){
 				piece = new Piece(color);
 			}
-
 			fe.getline(buffer, 2, ',');
 			x = atoi(buffer);
 			fe.getline(buffer, 2, ';');
 			y = atoi(buffer);
 			board[x][y] = piece;
+			if(x == 7 && y == 7){
+				break;
+			}
 		}
 		fe.close();
 		return true;
