@@ -15,7 +15,7 @@ ENUM_COLOR Piece::getColor(){
 }
 
 char Piece::toString(){
-	return ' ';
+	return 'V';
 }
 
 bool Piece::isValidMove(Position* origen, Position* destino){

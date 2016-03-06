@@ -4,6 +4,9 @@
 #include <cctype>
 #include <cstring>
 #include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
 
 /*---- NCurses directives ----*/
 #include <menu.h>
@@ -27,103 +30,184 @@ using std::endl;
 using std::isalpha;
 using std::isdigit;
 using std::string;
+using std::vector;
+using std::iostream;
+using std::fstream;
+using std::ifstream;
+using std::ofstream;
 
 /*---- Functions Headers ----*/
+bool isSameColor(Piece***, Position*, ENUM_COLOR);
 bool isValiEntry(string);
-void printArray(Piece***);
 Position* createPosition(char, char);
 int valueOfChar(char);
 Piece*** createBoard();
+Piece*** createCopyBoard(Piece***);
 void showBoard(Piece***);
 void destroyBoard(Piece***);
-void Mover(Piece***, Position* , Position*);
+bool Mover(Piece***, Position* , Position*);
 bool isSomethingInMiddle(Piece***, Position*, Position*);
+Position* placeToKing(Piece***, ENUM_COLOR);
+Position* isCheck(Piece***, Position*);
+vector<Position*> getTrailOfChequer(Piece***, Position*, Position*);
+bool enemyChequer(Piece***, Position*);
+bool isValidMove(Piece***, Position* init, Position* end);
+bool isEmpty(Piece***, Position*);
+bool isValidDestiny(Piece***, Position*, Position*);
+bool isSameColor(Piece***, Position*, Position*);
+bool isKing(Piece***, Position*);
+bool isPeonEat(Piece*** , Position*, Position*);
+bool cantMoveForScape(Piece***, Position*, Position*, ENUM_COLOR color);
+bool cantEat(Piece***, Piece*);
+bool cantMoveInMiddle(Piece***, Position*, Position*);
+bool cantMoveKing(Piece***, Position*, ENUM_COLOR color);
+Position* nexMoveHasCheck(Piece***, Position*, Position*, ENUM_COLOR);
+void getEntry(int, char*);
+void saveGame(Piece***);
+bool uploadGame(Piece***);
+void fillBoard(Piece***);
 
 int main(int argc, char *argv[]){
- 	Piece*** board = createBoard();
  	Position* initial;
  	Position* end;
- 	char* movimiento = new char[4];
- 	int turno = 0;
+ 	Position* king;
+ 	ENUM_COLOR color;
+ 	ENUM_COLOR enemyColor;
+ 	char* move = new char[4];
+ 	int turn = 0;
+ 	bool hasMove = false;
+ 	bool playing = true;
 	initscr();	
 	start_color();
 	init_pair(1, COLOR_BLACK, 0);
 	init_pair(2, COLOR_WHITE, 0);
-	while(true){	
+	Piece*** board = createBoard();
+	getch();
+	
+	if(uploadGame(board)){
+		printw("Su partida se cargo con éxito.");
+	}else{
+		printw("Su partida no se cargo con éxito, volvamos a jugar.");
+		fillBoard(board);
+	}
+
+	while(playing){
 		showBoard(board);
+		if(turn%2 == 0){
+			color = BLANCO;
+		}else{
+			color = NEGRO;
+		}
 		printw("\t1. Mover. \n");
 		printw("\t2. Guardar Partida. \n");
-		printw("\t2. Salir. \n\n");
+		printw("\t3. Salir. \n\n");
 		printw("\tAcción: ");
 		noecho();
-		if(getch() == 49){
+		hasMove = false;
+		int choose = getch();
+		if(choose == 49){
 			clear();
 			showBoard(board);
-			if(turno % 2){
-				printw("\tTurno de las negras. \n\n");
-			}else{
-				printw("\tTurno de las blancas. \n\n");
-			}
-			printw("\tMovimiento: ");
-			char valor = getch();
-			while(!(((int) valor >= 65 && (int) valor <= 72) ||((valor >= 97)&& (valor <= 104)))){
-				valor = getch();
-			}
-			movimiento[0] = valor;
-			addch(valor);
-			valor = getch();
-			while(!(((int) valor >= 48 && (int) valor <= 55))){
-				valor = getch();
-			}
-			movimiento[1] = valor;
-			addch(valor);
-			while(!(((int) valor >= 65 && (int) valor <= 72) ||((valor >= 97)&& (valor <= 104)))){
-				valor = getch();
-			}
-			movimiento[2] = valor;
-			addch(valor);
-			valor = getch();
-			while(!(((int) valor >= 48 && (int) valor <= 55))){
-				valor = getch();
-			}
-			movimiento[3] = valor;
-			addch(valor);
-			initial = createPosition(movimiento[1], movimiento[0]);
-			end = createPosition(movimiento[3], movimiento[2]);
-			if(isValiEntry(movimiento)){
-				if((board[initial -> getX()][initial -> getY()]) -> getType() == PEON){
-					if((board[end -> getX()][end -> getY()]) -> getType() != VACIA){
-						int initialX = initial -> getX();
-						int initialY = initial -> getY();
-						int endX = end -> getX();
-						int endY = end -> getY();
-						if((board[initial -> getX()][initial -> getY()]) -> getColor() == BLANCO){
-							if(endX == initialX - 1 && endY == initialY + 1){
-								Mover(board, initial , end);
-							}else if(endX == initialX - 1 && endY == initialY - 1){
-								Mover(board, initial , end);
-							}
-						}else if((board[initial -> getX()][initial -> getY()]) -> getColor() == NEGRO){
-							if(endX == initialX + 1 && endY == initialY + 1){
-								Mover(board, initial , end);
-							}else if(endX == initialX + 1 && endY == initialY - 1){
-								Mover(board, initial , end);
-							}
+			getEntry(turn, move);
+			initial = createPosition(move[1], move[0]);
+			end = createPosition(move[3], move[2]);
+			king = placeToKing(board, color);
+			Position* checkr = isCheck(board, king);
+			bool nexMoveDanger = nexMoveHasCheck(board, initial, end, color); 
+			if(isValiEntry(move) && isSameColor(board, initial, color)){
+				if(!nexMoveDanger && !checkr){
+					if(Mover(board, initial , end)){
+						turn++;
+					}
+				}else if(checkr && !nexMoveHasCheck){
+					if(Mover(board, initial , end)){
+						turn++;
+					}
+				}else if(checkr && nexMoveDanger){
+					if(cantMoveForScape(board, checkr, king, color)){
+						while(nexMoveDanger){
+							delete initial;
+							delete end;
+							delete king;
+							delete checkr;
+							getEntry(turn, move);
+							Position* initial = createPosition(move[1], move[0]);
+							Position* end = createPosition(move[3], move[2]);
+							Position* king = placeToKing(board, color);
+							Position* checkr = isCheck(board, king);
+							bool nexMoveDanger = nexMoveHasCheck(board, initial, end, color); 
 						}
+						turn++;
+						getch();
+					}else{
+						clear();
+						showBoard(board);
+						printw("\n\tGracias por jugar.");
+						if(color == NEGRO){
+							printw("\n\tGanan las blancas.");
+						}else{
+							printw("\n\tGanan las negras.");
+						}
+						playing = false;
+						getch();
 					}
 				}
 			}
-			if(isValiEntry(movimiento) && !isSomethingInMiddle(board, initial, end) && ((board[initial -> getX()][initial -> getY()]) -> isValidMove(initial, end))){
-				Mover(board, initial , end);
-			}
+		}else if(choose == 50){
+			saveGame(board);
 			getch();
-			turno++;
+		}else if(choose == 51){
+			clear();
+			showBoard(board);
+			printw("\n\tGracias por jugar.");
+			getch();
+			playing = false;
 		}
 		clear();
 	}	
 	destroyBoard(board);
 	endwin();			
 	return 0;
+}
+
+
+void  getEntry(int turn, char* move){
+	ENUM_COLOR color;
+	if(turn % 2){
+		printw("\tTurno de las negras. \n\n");
+		color = NEGRO;
+	}else{
+		printw("\tTurno de las blancas. \n\n");
+		color = BLANCO;
+	}
+	printw("\tMovimiento: ");
+	char value = getch();
+	while(!(((int) value >= 65 && (int) value <= 72) ||((value >= 97)&& (value <= 104)))){
+		value = getch();
+	}
+	move[0] = value;
+	addch(value);
+	value = getch();
+	while(!(((int) value >= 48 && (int) value <= 55))){
+		value = getch();
+	}
+	move[1] = value;
+	addch(value);
+	while(!(((int) value >= 65 && (int) value <= 72) ||((value >= 97)&& (value <= 104)))){
+		value = getch();
+	}
+	move[2] = value;
+	addch(value);
+	value = getch();
+	while(!(((int) value >= 48 && (int) value <= 55))){
+		value = getch();
+	}
+	move[3] = value;
+	addch(value);
+}
+
+bool isSameColor(Piece*** board, Position* initial, ENUM_COLOR color){
+	return board[initial->getX()][initial->getY()] -> getColor() == color;
 }
 
 void showBoard(Piece*** board){
@@ -137,7 +221,11 @@ void showBoard(Piece*** board){
 			if(board[i][j]){
 				printw("[");
 				attron(COLOR_PAIR(board[i][j] -> getColor() + 1) | A_BOLD );
-				addch(board[i][j] -> toString());
+				if(board[i][j] -> getType() != VACIA){
+					addch(board[i][j] -> toString());
+				}else{
+					addch(' ');
+				}
 				attroff(COLOR_PAIR(board[i][j] -> getColor() + 1));
 				printw("]");
 			}else{
@@ -151,25 +239,22 @@ void showBoard(Piece*** board){
 	}
 }
 
-void printArray(Piece*** board){
-	for (int i = 0; i < 8; ++i){
-		for (int j = 0; j < 8; ++j){
-			if(board[i][j]){
-				cout << "[" << board[i][j] -> toString() << "] ";
-			}else{
-				cout << "[ ]";
-			}
-		}
-		cout << endl;
-	}
-	cout << endl;
-}
-
 Position* createPosition(char x, char y){
 	int file = valueOfChar(x);
 	int column = valueOfChar(y);
 	Position* position = new Position(file, column);
 	return position;
+}
+
+Position* nexMoveHasCheck(Piece*** board, Position* init, Position* end, ENUM_COLOR color){
+	Piece*** copyBoard = createCopyBoard(board);
+	Position* king = placeToKing(board, color); 
+	if(Mover(copyBoard, init, end)){
+		return isCheck(copyBoard,king);
+	}else{
+		delete king;
+		return NULL;
+	}
 }
 
 int valueOfChar(char character){
@@ -214,12 +299,8 @@ bool isValiEntry(string move){
 	return true;
 }
 
-Piece*** createBoard(){
-	Piece*** board = new Piece**[8];
-	for (int i = 0; i < 8; ++i){
-		board[i] = new Piece*[8];
-	}
 
+void fillBoard(Piece*** board){
 	for (int i = 0; i < 8; ++i){
 		for (int j = 0; j < 8; ++j){
 			ENUM_COLOR color = NULO;
@@ -245,6 +326,13 @@ Piece*** createBoard(){
 			}
 		}
 	}
+}
+
+Piece*** createBoard(){
+	Piece*** board = new Piece**[8];
+	for (int i = 0; i < 8; ++i){
+		board[i] = new Piece*[8];
+	}
 	return board;
 }
 
@@ -254,23 +342,23 @@ void destroyBoard(Piece*** board){
 			delete board[i][j];
 		}
 	}
-
 	for (int i = 0; i < 8; ++i){
 		delete[] board[i];
 	}
-
 	delete[] board;
 }
 
-void Mover(Piece*** board, Position* init, Position* end){
+bool Mover(Piece*** board, Position* init, Position* end){
 	int initX = init -> getX();
 	int initY = init -> getY();
 	int endX = end -> getX();
 	int endY = end -> getY();
-	if((board[initX][initY] -> getType() != VACIA) && (board[endX][endY] -> getType() == VACIA || board[endX][endY] -> getColor() != board[initX][initY] -> getColor())){
+	if(isValidMove(board, init, end) && !isKing(board, end)){
 		board[endX][endY] = board[initX][initY];
 		board[initX][initY] = new Piece((board[initX][initY]) -> getColor());
-	}	
+		return true;
+	}
+	return false;
 }
 
 bool isSomethingInMiddle(Piece*** board, Position* init, Position* end){
@@ -309,7 +397,7 @@ bool isSomethingInMiddle(Piece*** board, Position* init, Position* end){
 			return false;
 		}
 	}else if(board[initX][initY] -> getType() == PEON){
-		return board[endX][endY] -> getType() != VACIA;
+		return board[endX][endY] -> getType() != VACIA && !isPeonEat(board, init, end);
 	}else if(board[initX][initY] -> getType() == CABALLO){
 		return false;
 	}else if(board[initX][initY] -> getType() == ALFIL){
@@ -318,8 +406,6 @@ bool isSomethingInMiddle(Piece*** board, Position* init, Position* end){
 				int referencesY = endY - 1;
 				for (int i = endX + 1 ; i < initX; ++i){
 					if(board[i][referencesY] -> getType() != VACIA){
-						addch(i + 48);
-						addch(referencesY + 48);
 						return true;
 					}
 					referencesY--;
@@ -364,8 +450,6 @@ bool isSomethingInMiddle(Piece*** board, Position* init, Position* end){
 				int referencesY = endY - 1;
 				for (int i = endX + 1 ; i < initX; ++i){
 					if(board[i][referencesY] -> getType() != VACIA){
-						addch(i + 48);
-						addch(referencesY + 48);
 						return true;
 					}
 					referencesY--;
@@ -432,6 +516,364 @@ bool isSomethingInMiddle(Piece*** board, Position* init, Position* end){
 		}
 	}
 	else{
+		return false;
+	}
+}
+
+Position* placeToKing(Piece*** board, ENUM_COLOR color){
+	for (int i = 0; i < 8; ++i){
+		for (int j = 0; j < 8; ++j){
+			if(board[i][j] -> getType() == REY && board[i][j] -> getColor() == color){
+				Position* pos = new Position(i, j);
+				return pos;
+			}
+		}
+	}
+}
+
+Position* isCheck(Piece*** board, Position* king){
+	Position* tempPosition = new Position(0, 0);
+	for (int i = 0; i < 8; ++i){
+		for (int j = 0; j < 8; ++j){
+			tempPosition -> setY(j);
+			tempPosition -> setX(i);
+			if(isValidMove(board, tempPosition, king)){
+				return tempPosition;
+			}
+		}
+	}
+	delete tempPosition;
+	return NULL;
+}
+
+bool enemyChequer(Piece*** board, Position* checkr){
+	if(checkr && board[checkr -> getX()][checkr -> getY()] -> getType() != REY){
+		for (int i = 0; i < 8; ++i){
+			for (int j = 0; j < 8; ++j){
+				Position* init = new Position(i, j);
+				if(isValidMove(board, init, checkr)){
+					delete init;
+					return true;
+				}
+				delete init;
+			}
+		}
+		return false;
+	}else{
+		return false;
+	}
+}
+
+bool isValidMove(Piece*** board, Position* init, Position* end){
+	int initX = init -> getX();
+	int initY = init -> getY();
+	int endX = end -> getX();
+	int endY = end -> getY();
+	if(endX < 0 || endX > 7 || endY < 0 || endY > 7 || initX < 0 || initX > 7 || initY < 0 || initY  > 7){
+		return false;
+	}
+	bool empty =  !isEmpty(board, init);
+	bool validDestiny  = isValidDestiny(board, init, end);
+	bool move = board[initX][initY] -> isValidMove(init, end);
+	bool peonEat = isPeonEat(board, init, end);
+	return empty && validDestiny && (move || peonEat); 
+}
+
+bool isEmpty(Piece*** board, Position* init){
+	int initX = init -> getX();
+	int initY = init -> getY();
+	return (board[initX][initY] -> getType() == VACIA);
+}
+
+bool isValidDestiny(Piece*** board , Position* init, Position* end){
+	int endX = end -> getX();
+	int endY = end -> getY();
+	return (endX >= 0 && endY <=7) && (isEmpty(board, end) || !isSameColor(board, init, end)) && !isSomethingInMiddle(board, init, end);
+}
+
+bool isSameColor(Piece*** board, Position* init , Position* end){
+	int initX = init -> getX();
+	int initY = init -> getY();
+	int endX = end -> getX();
+	int endY = end -> getY();
+	return board[endX][endY] -> getColor() == board[initX][initY] -> getColor();
+}
+
+Piece*** createCopyBoard(Piece*** board){
+	Piece*** copyBoard = new Piece**[8];
+	for (int i = 0; i < 8; ++i){
+		copyBoard[i] = new Piece*[8];
+	}
+	for (int i = 0; i < 8; ++i){
+		for (int j = 0; j < 8; ++j){
+			copyBoard[i][j] = board[i][j];
+		}
+	}
+	return copyBoard;
+}
+
+bool isKing(Piece*** board, Position* end){
+	int endX = end -> getX();
+	int endY = end -> getY();
+	return (board[endX][endY] -> getType() == REY);
+}
+
+bool isPeonEat(Piece*** board, Position* init, Position* end){
+	int initX = init -> getX();
+	int initY = init -> getY();
+	int endX = end -> getX();
+	int endY = end -> getY();
+	if((board[initX][initY]) -> getType() == PEON){
+		if((board[endX][endY]) -> getType() != VACIA){
+			if((board[initX][initY]) -> getColor() == BLANCO){
+				if(endX == initX - 1 && endY == initY + 1){
+					return true;
+				}else if(endX == initX - 1 && endY == initY - 1){
+					return true;
+				}else{
+					return false;
+				}
+			}else if((board[initX][initY]) -> getColor() == NEGRO){
+				if(endX == initX + 1 && endY == initY + 1){
+					return true;
+				}else if(endX == initX + 1 && endY == initY - 1){
+					return true;
+				}else{
+					return false;
+				}
+			}else{
+				return false;
+			}
+		}else{
+			return false;
+		}
+	}else{
+		false;
+	}
+}
+
+vector<Position*> getTrailOfChequer(Piece*** board,Position* chequer, Position* king){
+	int initX = chequer -> getX();
+	int initY = chequer -> getY();
+	int endX = king -> getX();
+	int endY = king -> getY();
+	vector<Position*> TrailOfChequer;
+	if(board[initX][initY] -> getType() == TORRE){
+		if(endY > initY){ // se mueve a la derecha.
+			for (int i = endY - 1; i > initY; --i){
+				TrailOfChequer.push_back(new Position(initX,i));
+			}
+		}else if(initY > endY){ // se mueve a la izquierda.
+			for (int i = endY + 1; i < initY; ++i){
+				TrailOfChequer.push_back(new Position(initX,i));	
+			}
+		}else if(endX > initX){ // se mueve a abajo.
+			for (int i = endX - 1; i > initX; --i){
+				TrailOfChequer.push_back(new Position(i,initY));
+			}
+		}else if(initX > endX){ // se mueve a la arriba.
+			for (int i = endX + 1 ; i < initX; ++i){
+				TrailOfChequer.push_back(new Position(i,initY));
+			}
+		}
+	}else if(board[initX][initY] -> getType() == ALFIL){
+		if(initX + initY == endX + endY){
+			if(endX < initX && endY > initY){
+				int referencesY = endY - 1;
+				for (int i = endX + 1 ; i < initX; ++i){
+					TrailOfChequer.push_back(new Position(i,referencesY));
+					referencesY--;
+				}
+			}else if(endX > initX && endY < initY){
+				int referencesY = endY + 1;
+				for (int i = endX -1 ; i > initX ; --i){
+					TrailOfChequer.push_back(new Position(i,referencesY));
+					referencesY++;
+				}
+			}
+		}else if(initX - initY == endX - endY){
+			if(endX < initX && endY < initY){
+				int referencesY = endY + 1;
+				for (int i = endX + 1; i < initX; ++i){
+					TrailOfChequer.push_back(new Position(i,referencesY));
+					referencesY++;
+				}
+			}else if(endX > initX && endY > initY){
+				int referencesY = endY - 1;
+				for (int i = endX - 1  ; i > initX ; --i){
+					TrailOfChequer.push_back(new Position(i,referencesY));
+					referencesY--;
+				}
+			}
+		}
+	}else if(board[initX][initY] -> getType() == DAMA){
+		if(endY > initY){ // se mueve a la derecha.
+			for (int i = endY - 1; i > initY; --i){
+				TrailOfChequer.push_back(new Position(initX,i));
+			}
+		}else if(initY > endY){ // se mueve a la izquierda.
+			for (int i = endY + 1; i < initY; ++i){
+				TrailOfChequer.push_back(new Position(initX,i));	
+			}
+		}else if(endX > initX){ // se mueve a abajo.
+			for (int i = endX - 1; i > initX; --i){
+				TrailOfChequer.push_back(new Position(i,initY));
+			}
+		}else if(initX > endX){ // se mueve a la arriba.
+			for (int i = endX + 1 ; i < initX; ++i){
+				TrailOfChequer.push_back(new Position(i,initY));
+			}
+		}else if(initX + initY == endX + endY){
+			if(endX < initX && endY > initY){
+				int referencesY = endY - 1;
+				for (int i = endX + 1 ; i < initX; ++i){
+					TrailOfChequer.push_back(new Position(i,referencesY));
+					referencesY--;
+				}
+			}else if(endX > initX && endY < initY){
+				int referencesY = endY + 1;
+				for (int i = endX -1 ; i > initX ; --i){
+					TrailOfChequer.push_back(new Position(i,referencesY));
+					referencesY++;
+				}
+			}
+		}else if(initX - initY == endX - endY){
+			if(endX < initX && endY < initY){
+				int referencesY = endY + 1;
+				for (int i = endX + 1; i < initX; ++i){
+					TrailOfChequer.push_back(new Position(i,referencesY));
+					referencesY++;
+				}
+			}else if(endX > initX && endY > initY){
+				int referencesY = endY - 1;
+				for (int i = endX - 1  ; i > initX ; --i){
+					TrailOfChequer.push_back(new Position(i,referencesY));
+					referencesY--;
+				}
+			}
+		}
+	}
+	return TrailOfChequer;
+}
+
+bool cantMoveForScape(Piece*** board, Position* chequer, Position* king, ENUM_COLOR color){
+	if(chequer && king){
+		bool cantMoveInFront = cantMoveInMiddle(board, chequer, king);
+		bool cantEat = enemyChequer(board, chequer);
+		bool moveKing = cantMoveKing(board, king, color);
+		return cantMoveInFront || cantEat || moveKing;
+	}else{
+		return false;
+	}
+}
+
+bool cantMoveInMiddle(Piece*** board, Position* chequer, Position* king){
+	if(chequer && king){
+		vector<Position*> TrailOfChequer = getTrailOfChequer(board, chequer, king);
+		for (int i = 0; i < TrailOfChequer.size(); ++i){
+			for (int x = 0; x < 8 ; ++x){
+				for (int y = 0; y < 8 ; ++y){
+					Position* init = new Position(x, y);
+					if(isValidMove(board, init, TrailOfChequer.at(i))){
+						delete init;
+						return true;
+					}
+					delete init;
+				}
+			}
+		}
+		return false;
+	}
+	return false;
+}
+
+bool cantMoveKing(Piece*** board, Position* king, ENUM_COLOR color){
+	for (int i = -1; i <= 1; ++i){
+		for (int j = -1; j <= 1; ++j){
+			Position* newPosition = new Position(i,j);
+			if(isValidMove(board, king, newPosition) && !nexMoveHasCheck(board, king, newPosition, color)){
+				delete newPosition;
+				return true;
+			}
+			delete newPosition;
+		}
+	}
+	return false;
+}
+
+void saveGame(Piece*** board){
+	ofstream fs("game.txt");
+	string piece; 
+	for (int i = 0; i < 8; ++i){
+		for (int j = 0; j < 8; ++j){
+			piece = "";
+			ENUM_COLOR color =  board[i][j] -> getColor();
+			ENUM_TYPE type =  board[i][j] -> getType();
+			if(color == NEGRO){
+				piece += "N,";
+			}else if(color == BLANCO){
+				piece += "B,";
+			}else{
+				piece += "S,";
+			}
+			piece += board[i][j] -> toString();
+			piece += ",";
+			piece += (char) i + 48;
+			piece += ",";
+			piece += (char) j + 48;
+			piece += ";";
+			fs << piece.c_str();
+		}
+	}
+	fs.close();
+}
+
+bool uploadGame(Piece*** board){
+	char buffer[2];
+	ENUM_COLOR color;
+	int x;
+	int y;
+	Piece* piece;
+	ENUM_TYPE type;
+	ifstream fe("game.txt"); 
+	if(fe){
+		while(!fe.eof()){
+			fe.getline(buffer, 2, ',');
+			if(!strcmp(buffer, (char*) "N")){
+				color = NEGRO;
+			}else if(!strcmp(buffer, (char*)"B")){
+				color = BLANCO;
+			}
+			fe.getline(buffer, 2, ',');
+			printw(buffer);
+			getch();
+			if(!strcmp(buffer,  (char*) "T")){
+				printw("Hola");
+				piece = new Torre(color);
+			}else if(!strcmp(buffer,  (char*) "C")){
+				piece = new Caballo(color);
+			}else if(!strcmp(buffer,  (char*) "P")){
+				piece = new Peon(color);
+			}else if(!strcmp(buffer,  (char*) "A")){
+				piece = new Alfil(color);
+			}else if(!strcmp(buffer,   (char*) "D")){
+				piece = new Dama(color);
+			}else if(!strcmp(buffer,  (char*) "R")){
+				piece = new Rey(color);
+			}else{
+				piece = new Piece(color);
+			}
+
+			fe.getline(buffer, 2, ',');
+			x = atoi(buffer);
+			fe.getline(buffer, 2, ';');
+			y = atoi(buffer);
+			board[x][y] = piece;
+		}
+		fe.close();
+		return true;
+	}else{
+		fe.close();
 		return false;
 	}
 }
