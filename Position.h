@@ -1,9 +1,9 @@
 #ifndef POSITION_H
 #define POSITION_H
 
-class Position{
+class Position {
 private:
-	int x,y;
+	int x, y;
 
 public:
 	Position(int, int);

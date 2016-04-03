@@ -3,10 +3,10 @@
 #include "Piece.h"
 #include "Position.h"
 
-class Alfil: public Piece{
-	private:
+class Alfil: public Piece {
+private:
 	ENUM_COLOR color;
-	public:
+public:
 	Alfil(ENUM_COLOR);
 	char toString();
 	bool isValidMove(Position*, Position*);

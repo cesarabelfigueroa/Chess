@@ -3,10 +3,10 @@
 #include "Piece.h"
 #include "Position.h"
 
-class Peon: public Piece{
-	private:
+class Peon: public Piece {
+private:
 	ENUM_COLOR color;
-	public:
+public:
 	Peon(ENUM_COLOR);
 	char toString();
 	bool isValidMove(Position*, Position*);

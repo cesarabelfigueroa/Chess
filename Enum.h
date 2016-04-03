@@ -7,8 +7,8 @@ enum ENUM_COLOR {
 	NULO
 };
 
-enum ENUM_TYPE{
-	VACIA, 
+enum ENUM_TYPE {
+	VACIA,
 	TORRE,
 	ALFIL,
 	CABALLO,

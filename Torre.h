@@ -3,10 +3,10 @@
 #include "Piece.h"
 #include "Position.h"
 
-class Torre: public Piece{
-	private:
+class Torre: public Piece {
+private:
 	ENUM_COLOR color;
-	public:
+public:
 	Torre(ENUM_COLOR);
 	char toString();
 	bool isValidMove(Position*, Position*);
